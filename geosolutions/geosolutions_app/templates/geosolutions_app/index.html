@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> GeoSolutions </title>
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.css">
+</head>
+
+<body>
+    <div id="app">
+	    <section class="hero">
+		  <div class="hero-body">
+		    <div class="container">
+		      <h1 class="title">
+		      	GeoSolutions Exercise - Alex
+		      </h1>
+		      <h2 class="subtitle">
+		      	Simple app for finding the nearest/furthest N points away from an input point in a 2D plane
+		      </h2>
+		    </div>
+		  </div>
+		</section>
+
+		<div class="columns">
+			<div class="column">
+				<div class="hero">
+					<div class="hero-body">
+						<h1 class="title">
+							Point search	
+						</h1>
+				        {% csrf_token %}
+				        <b-field label="X coordinate">
+				            <b-input v-model="formData.x"></b-input>
+				        </b-field>
+
+				        <b-field label="Y coordinate">
+				            <b-input v-model="formData.y"></b-input>
+				        </b-field>
+
+				        <b-field label="# of points">
+				            <b-input v-model="formData.points"></b-input>
+				        </b-field>
+
+				        <b-field label="Operation type">
+				            <b-select placeholder="Select an operation type" v-model="formData.selectedOperationType">
+				                <option
+				                    v-for="option in operationTypes"
+				                    :value="option.id"
+				                    :key="option.value">
+				                    ${ option.value }
+				                </option>
+				            </b-select>
+				        </b-field>
+		                <b-button @click="submit" type="is-success">Submit</b-button>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="hero">
+					<div class="hero-body">
+						<h1 class="title">
+							Search result
+						</h1>
+						<template>
+						    <section>
+						        <b-table
+						            :data="isEmpty ? [] : searchResults"
+						            :bordered="isBordered"
+						            :striped="isStriped"
+						            :narrowed="isNarrowed"
+						            :hoverable="isHoverable"
+						            :loading="pointTable.isLoading"
+						            :focusable="isFocusable"
+						            :mobile-cards="hasMobileCards"
+			                        :paginated="isPaginated"
+						            :per-page="perPage"
+						            :current-page.sync="currentPage"
+						            :pagination-simple="isPaginationSimple"
+						            :pagination-position="paginationPosition"
+						            :default-sort-direction="defaultSortDirection"
+						            :sort-icon="sortIcon"
+						            :sort-icon-size="sortIconSize"
+						            default-sort="pk"
+						            aria-next-label="Next page"
+						            aria-previous-label="Previous page"
+						            aria-page-label="Page"
+						            aria-current-label="Current page">
+						            <template slot-scope="props">
+						                <b-table-column field="x" label="X">
+						                    ${ props.row.point[0] }
+						                </b-table-column>
+						                <b-table-column field="y" label="Y">
+						                    ${ props.row.point[1] }
+						                </b-table-column>
+						                <b-table-column field="distance" label="Distance">
+						                    ${ props.row.distance }
+						                </b-table-column>
+						            </template>
+
+						            <template slot="empty">
+						                <section class="section">
+						                    <div class="content has-text-grey has-text-centered">
+						                        <p>
+						                            <b-icon
+						                                icon="map-search"
+						                                size="is-large">
+						                            </b-icon>
+						                        </p>
+						                        <p>Please submit a search.</p>
+						                    </div>
+						                </section>
+						            </template>
+						        </b-table>
+						    </section>
+						</template>	
+					</div>
+				</div>
+			</div>
+	    </div>
+
+		<div class="columns">
+			<div class="column">
+				<div class="hero">
+					<div class="hero-body">
+						<h1 class="title">
+							Point list
+						</h1>
+						<template>
+						    <section>
+						        <b-table
+						            :data="isEmpty ? [] : points"
+						            :bordered="isBordered"
+						            :striped="isStriped"
+						            :narrowed="isNarrowed"
+						            :hoverable="isHoverable"
+						            :loading="pointTable.isLoading"
+						            :focusable="isFocusable"
+						            :mobile-cards="hasMobileCards"
+			                        :paginated="isPaginated"
+						            :per-page="perPage"
+						            :current-page.sync="currentPage"
+						            :pagination-simple="isPaginationSimple"
+						            :pagination-position="paginationPosition"
+						            :default-sort-direction="defaultSortDirection"
+						            :sort-icon="sortIcon"
+						            :sort-icon-size="sortIconSize"
+						            default-sort="pk"
+						            aria-next-label="Next page"
+						            aria-previous-label="Previous page"
+						            aria-page-label="Page"
+						            aria-current-label="Current page">
+
+						            <template slot-scope="props">
+						                <b-table-column field="pk" label="ID" width="40" numeric>
+						                    ${ props.row.pk }
+						                </b-table-column>
+
+						                <b-table-column field="x" label="X">
+						                    ${ props.row.x}
+						                </b-table-column>
+
+						                <b-table-column field="y" label="Y">
+						                    ${ props.row.y }
+						                </b-table-column>
+						            </template>
+
+						            <template slot="empty">
+						                <section class="section">
+						                    <div class="content has-text-grey has-text-centered">
+						                        <p>
+						                            <b-icon
+						                                icon="emoticon-sad"
+						                                size="is-large">
+						                            </b-icon>
+						                        </p>
+						                        <p>Nothing here.</p>
+						                    </div>
+						                </section>
+						            </template>
+						        </b-table>
+						    </section>
+						</template>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="hero">
+					<div class="hero-body">
+						<h1 class="title">
+							Previous searches
+						</h1>
+						<template>
+						    <section>
+						        <b-table
+						            :data="isEmpty ? [] : searches"
+						            :bordered="isBordered"
+						            :striped="isStriped"
+						            :narrowed="isNarrowed"
+						            :hoverable="isHoverable"
+						            :loading="pointTable.isLoading"
+						            :focusable="isFocusable"
+						            :mobile-cards="hasMobileCards"
+			                        :paginated="isPaginated"
+						            :per-page="perPage"
+						            :current-page.sync="currentPage"
+						            :pagination-simple="isPaginationSimple"
+						            :pagination-position="paginationPosition"
+						            :default-sort-direction="defaultSortDirection"
+						            :sort-icon="sortIcon"
+						            :sort-icon-size="sortIconSize"
+						            default-sort="pk"
+						            aria-next-label="Next page"
+						            aria-previous-label="Previous page"
+						            aria-page-label="Page"
+						            aria-current-label="Current page">
+
+						            <template slot-scope="props">
+						                <b-table-column field="x" label="X">
+						                    ${ props.row.search_x}
+						                </b-table-column>
+						                <b-table-column field="y" label="Y">
+						                    ${ props.row.search_y }
+						                </b-table-column>
+						                <b-table-column field="operation" label="Operation">
+						                    ${ operationTypes.find(x => x.id === props.row.operation).value }
+						                </b-table-column>
+						                <b-table-column field="points" label="# of points">
+						                    ${ props.row.points }
+						                </b-table-column>
+						                <b-table-column label="">
+							                <b-button @click="fillSearch(props.row)" type="is-success" icon-left="magnify"> Fill data </b-button>
+						                </b-table-column>
+						            </template>
+
+						            <template slot="empty">
+						                <section class="section">
+						                    <div class="content has-text-grey has-text-centered">
+						                        <p>
+						                            <b-icon
+						                                icon="emoticon-sad"
+						                                size="is-large">
+						                            </b-icon>
+						                        </p>
+						                        <p>Nothing here.</p>
+						                    </div>
+						                </section>
+						            </template>
+						        </b-table>
+						    </section>
+						</template>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- Full bundle -->
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+
+    <!-- Individual components -->
+    <script src="https://unpkg.com/buefy/dist/components/table"></script>
+    <script src="https://unpkg.com/buefy/dist/components/input"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.js"></script>
+
+    <script>
+	    axios.defaults.xsrfCookieName = 'csrftoken';
+		axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+        new Vue({
+            el: '#app',
+           	delimiters: ['${', '}'],
+	        data: {
+	        	operationTypes: [
+	        		{id: 'N', value: 'Nearest'},
+	        		{id: 'F', value: 'Furthest'},
+	        	],
+	            points: [],
+	            searches: [],
+	            searchResults: [],
+                isEmpty: false,
+                isBordered: true,
+                isStriped: true,
+                isNarrowed: true,
+                isHoverable: true,
+                isFocusable: true,
+                hasMobileCards: true,
+                isPaginated: true,
+                isPaginationSimple: false,
+                paginationPosition: 'bottom',
+                defaultSortDirection: 'asc',
+                sortIcon: 'arrow-up',
+                sortIconSize: 'is-small',
+                currentPage: 1,
+                perPage: 10,
+                pointTable: {
+	                isLoading: true,
+                },
+                searchTable: {
+	                isLoading: true,
+                },
+                resultsTable: {
+	                isLoading: false,
+                },
+                formData: {
+                	x: '',
+                	y: '',
+                	points: '',
+                	selectedOperationType: 'N',
+                }
+	        },
+	        mounted: function() {
+	        	var obj = this;
+	        	axios.get('/api/points/').then(function(response) {
+	        		obj.points = response.data;
+	        		obj.pointTable.isLoading = false;
+	        	});
+	        	axios.get('/api/searches/').then(function(response) {
+	        		obj.searches = response.data;
+	        		obj.searchTable.isLoading = false;
+	        	});
+	        },
+	        methods: {
+	        	submit: function() {
+	        		var obj = this;
+	        		var errors = [];
+
+	        		if (isNaN(parseFloat(this.formData.x))) {
+	        			errors.push('Invalid X coordinate');
+	        		}
+	        		if (isNaN(parseFloat(this.formData.y))) {
+	        			errors.push('Invalid Y coordinate');
+	        		}
+	        		if (isNaN(parseInt(this.formData.points))) {
+	        			errors.push('Invalid number of points');
+	        		}
+	        		if (!this.formData.selectedOperationType) {
+	        			errors.push('Please select an operation type');
+	        		}
+
+	        		if (errors.length > 0) {
+		        		for (var i = 0; i <= errors.length - 1; i++) {
+		        			new Noty({
+							    type: 'error',
+							    layout: 'topRight',
+							    text: errors[i],
+							}).show();
+		        		}
+	        			return;
+	        		}
+
+	        		this.resultsTable.isLoading = true;
+
+	        		var searchData = {
+					    search_x: this.formData.x,
+					    search_y: this.formData.y,
+					    operation: this.formData.selectedOperationType,
+					    points: this.formData.points,
+					}
+
+					axios.post('/api/searches/', searchData).then(function (response) {
+						obj.resultsTable.isLoading = false;
+						obj.searchResults = response.data;
+						obj.searches.unshift(searchData);
+					}).catch(function (error) {
+						console.log(error);
+					});
+	        	},
+	        	fillSearch: function(search) {
+	        		this.formData = {
+	                	x: search.search_x,
+	                	y: search.search_y,
+	                	points: search.points,
+	                	selectedOperationType: search.operation,
+	        		}
+	        	}
+	        }
+	    });
+    </script>
+</body>
+</html>
